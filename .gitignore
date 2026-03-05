@@ -1,3 +1,8 @@
 computer-future-local-private-core
 .env
 .DS_Store
+
+# Collaboration infrastructure — lives in parent repo, not public
+CLAUDE.md
+memory.md
+andy-braindump-backlog.md
