@@ -1,0 +1,9 @@
+name = "computerfuture-xyz"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Future bindings (provision when ready):
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "computerfuture-xyz"
+# database_id = "<id after: wrangler d1 create computerfuture-xyz>"
