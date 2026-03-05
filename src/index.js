@@ -340,7 +340,7 @@ const CSS = `
   }
 
   .choice-label:hover { border-color: var(--gray); }
-  .choice-label input[type="radio"] { margin-top: 0.2rem; flex-shrink: 0; accent-color: var(--white); }
+  .choice-label input[type="radio"] { margin-top: 0.2rem; flex-shrink: 0; accent-color: #8b5cf6; width: 1.1em; height: 1.1em; }
 
   .hint-section {
     margin-bottom: 2rem;
@@ -578,7 +578,7 @@ function payPage() {
     <input type="hidden" name="l" value="1">
 
     <div class="form-group">
-      <label>display name (leaderboard)</label>
+      <label>display name (for leaderboard)</label>
       <input type="text" name="name" placeholder="how you'll appear on the leaderboard" required>
     </div>
 
@@ -614,7 +614,7 @@ function hintBlock(levelIdx) {
 <div class="hint-section">
   <details>
     <summary>hint — section ${LEVEL_META[levelIdx].section}</summary>
-    <div class="hint-body">"${text}"</div>
+    <div class="hint-body">${text}</div>
   </details>
 </div>`;
 }
@@ -832,31 +832,38 @@ function gameLevel(l, params) {
   <h2 class="level-title">${meta.title}</h2>
   <p class="prompt">
     You've reached the final level.<br><br>
-    The person behind this game is real. The call is real. But you have to ask for it.<br><br>
-    ${hintBlock(l)}
-    Fill this out honestly. There is no correct answer — there is only honest or not.
+    The person behind this game is real. The call is real.<br>
+    You don't apply. You book.
   </p>
-  <form action="/complete" method="GET">
-    <div class="form-group">
-      <label>who are you? (2–3 sentences)</label>
-      <textarea name="bio" rows="4" placeholder="not your resume. who you actually are." required></textarea>
+  ${hintBlock(l)}
+
+  <div style="display:flex;flex-direction:column;gap:1.2rem;margin-top:2rem;max-width:480px;">
+
+    <div style="border:1px solid var(--line);border-radius:4px;padding:1.5rem;">
+      <div style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gray);margin-bottom:0.75rem;">option A — scheduled</div>
+      <div style="font-size:1.5rem;font-weight:700;margin-bottom:0.4rem;">$100</div>
+      <div style="font-size:0.85rem;color:var(--gray);margin-bottom:1.2rem;line-height:1.6;">
+        Book a future slot. $25 non-refundable. $75 refunded if the call doesn't happen within 30 days.
+      </div>
+      <a href="/complete?type=scheduled" class="btn" style="font-size:0.9rem;padding:0.7rem 1.5rem;">
+        schedule a call →
+      </a>
+      <div style="font-size:0.75rem;color:var(--dim);margin-top:0.75rem;">stub — Stripe + Calendly in v2</div>
     </div>
-    <div class="form-group">
-      <label>what are you working on?</label>
-      <textarea name="work" rows="3" placeholder="specific, current, real." required></textarea>
+
+    <div style="border:1px solid #2a1a4a;border-radius:4px;padding:1.5rem;background:#0d0818;">
+      <div style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:#8b5cf6;margin-bottom:0.75rem;">option B — live now</div>
+      <div style="font-size:1.5rem;font-weight:700;margin-bottom:0.4rem;">$250</div>
+      <div style="font-size:0.85rem;color:var(--gray);margin-bottom:1.2rem;line-height:1.6;">
+        Ring right now. $50 non-refundable. $200 refunded automatically if no answer within 72 hours.
+      </div>
+      <a href="/complete?type=live" class="btn" style="font-size:0.9rem;padding:0.7rem 1.5rem;background:#8b5cf6;color:#fff;">
+        call now →
+      </a>
+      <div style="font-size:0.75rem;color:var(--dim);margin-top:0.75rem;">stub — Stripe + Twilio in v2</div>
     </div>
-    <div class="form-group">
-      <label>why are you ready?</label>
-      <textarea name="why" rows="3" placeholder="for the call. why now, why you." required></textarea>
-    </div>
-    <div class="form-group">
-      <label>how did you find this?</label>
-      <input type="text" name="source" placeholder="referral, link, stumbled upon...">
-    </div>
-    <div class="form-actions">
-      <button type="submit" class="btn">submit application →</button>
-    </div>
-  </form>
+
+  </div>
 </div>`;
   }
 
