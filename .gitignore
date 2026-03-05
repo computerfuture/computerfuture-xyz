@@ -1,6 +1,8 @@
 computer-future-local-private-core
 .env
 .DS_Store
+node_modules/
+.wrangler/
 
 # Collaboration infrastructure — lives in parent repo, not public
 CLAUDE.md
