@@ -1,6 +1,12 @@
 // computerfuture.xyz
 // Under construction. No game content served here yet.
 // Routes: / (coming soon), /robots.txt, * (404)
+//
+// Stats bar: seeded static values for now.
+// Wire when infrastructure exists:
+//   DISPATCHES → count from computerfuture.me ALL_POSTS (or KV)
+//   RANK 3+ → D1 sessions table, top zLevel scores
+//   Visit counter → KV increment on each / hit
 
 const ROBOTS = `User-agent: *
 Disallow: /
@@ -46,6 +52,24 @@ const CSS = `
     transition: color 0.2s, border-color 0.2s;
   }
   a:hover { color: #f0f0f0; border-color: #888; }
+  .stats {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.75rem 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 2.5rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    color: #333;
+    letter-spacing: 0.04em;
+    border-top: 1px solid #111;
+    background: #080808;
+  }
+  .stats span { white-space: nowrap; }
+  .stats .val { color: #555; }
 `;
 
 const PAGE = `<!DOCTYPE html>
@@ -64,6 +88,12 @@ const PAGE = `<!DOCTYPE html>
     <p class="name">computer<br>future</p>
     <p class="tag">coming soon</p>
     <a href="https://computerfuture.me">computerfuture.me →</a>
+  </div>
+  <div class="stats">
+    <span>RANK 1 &nbsp;<span class="val">E.M.</span></span>
+    <span>RANK 2 &nbsp;<span class="val">COMPUTER FUTURE</span></span>
+    <span>RANK 3 &nbsp;<span class="val">???</span></span>
+    <span>DISPATCHES &nbsp;<span class="val">5</span></span>
   </div>
 </body>
 </html>`;
