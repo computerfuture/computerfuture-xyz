@@ -2,14 +2,15 @@ name = "computerfuture-xyz"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "computerfuture-xyz"
-database_id = "REPLACE_AFTER: wrangler d1 create computerfuture-xyz"
+# D1 binding removed while under construction — re-add before Phase 2 launch:
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "computerfuture-xyz"
+# database_id = "<id from: wrangler d1 create computerfuture-xyz>"
 
-# Secrets — set via: wrangler secret put <NAME>
+# Secrets for Phase 2 — set via: wrangler secret put <NAME>
 # ADMIN_TOKEN    required  password for /admin route
-# BIBLE_CONTENT  optional  10 hint sections pipe-separated; fallback to hardcoded if unset
-# CLARITY_ID     optional  Microsoft Clarity project ID; analytics disabled if unset
+# BIBLE_CONTENT  optional  10 hint sections pipe-separated
+# CLARITY_ID     optional  Microsoft Clarity project ID
 # STRIPE_SK      required  Stripe secret key (sk_live_...)
 # STRIPE_WH      required  Stripe webhook signing secret
