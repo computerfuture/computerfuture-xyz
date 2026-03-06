@@ -5,14 +5,19 @@
 //   GET  /pay           payment screen (stub)
 //   GET  /play?l=1-9    game levels
 //   GET  /leaderboard   leaderboard
-//   POST /api/start     stub: create session (future: D1 + Stripe)
-//   POST /api/hint      stub: return hint for level
-//   POST /api/answer    stub: evaluate answer, advance level
+//   GET  /admin?token=  admin dashboard (requires ADMIN_TOKEN secret)
+//   GET  /r/:code       referral redirect (records click, redirects to /pay)
+//   POST /api/start     create D1 session + Stripe checkout (stub → v1)
+//   POST /api/hint      return hint for level (from BIBLE_CONTENT or fallback)
+//   POST /api/answer    evaluate answer, update D1 score (stub → v1)
 //   *                   404
 //
-// v1 note: all state is URL-param-based. No session persistence.
-// v2: wire D1 for sessions/scores, Stripe for payment, AI for evaluation.
-// Bible content: BIBLE_CONTENT env secret (10 sections, pipe-separated).
+// Secrets (wrangler secret put NAME):
+//   ADMIN_TOKEN    — /admin password
+//   BIBLE_CONTENT  — 10 hint sections pipe-separated (fallback to hardcoded)
+//   CLARITY_ID     — Microsoft Clarity project ID
+//   STRIPE_SK      — Stripe secret key
+//   STRIPE_WH      — Stripe webhook secret
 
 const HINT_EXCERPTS = [
   // §I — The Frame
@@ -36,6 +41,13 @@ const HINT_EXCERPTS = [
   // §X — The Test
   `This is not a test of what you know. It is a test of who you are. The maze has no correct answers — it has alignment. Some of the highest scores are for people who disagree clearly, with good reasons, and defend their position without needing validation. That is high agency. That is what we are looking for.`,
 ];
+
+// Returns hint excerpts from env secret if set, otherwise falls back to hardcoded.
+// BIBLE_CONTENT format: 10 sections separated by | (pipe).
+function getHints(env) {
+  if (env?.BIBLE_CONTENT) return env.BIBLE_CONTENT.split('|');
+  return HINT_EXCERPTS;
+}
 
 const LEVELS = 9;
 
@@ -495,7 +507,18 @@ function topBar(level, budget) {
 </div>`;
 }
 
-function shell(title, body, includeTopBar = false, level = 0, budget = 10) {
+function clarityScript(env) {
+  if (!env?.CLARITY_ID) return '';
+  return `<script type="text/javascript">
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window,document,"clarity","script","${env.CLARITY_ID}");
+<\/script>`;
+}
+
+function shell(title, body, env = null, includeTopBar = false, level = 0, budget = 10) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -506,6 +529,7 @@ function shell(title, body, includeTopBar = false, level = 0, budget = 10) {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
   <style>${CSS}</style>
+  ${clarityScript(env)}
 </head>
 <body>
 ${includeTopBar ? topBar(level, budget) : ''}
@@ -525,7 +549,7 @@ function budgetAfterLevel(l) {
 
 // ── Pages ──────────────────────────────────────────────────────────────────
 
-function landingPage() {
+function landingPage(env) {
   return shell('THE INFINITE GAME', `
 <div class="landing">
   <p class="landing-tag">computerfuture.xyz</p>
@@ -554,10 +578,10 @@ function landingPage() {
     <a href="/leaderboard">leaderboard</a>
     <a href="https://computerfuture.me" target="_blank">computerfuture.me</a>
   </div>
-</div>`);
+</div>`, env);
 }
 
-function payPage() {
+function payPage(env) {
   return shell('enter', `
 <div class="pay-wrap">
   <h2>you're entering<br>the infinite game</h2>
@@ -592,7 +616,7 @@ function payPage() {
       <a href="/" class="back-link-small">← back</a>
     </div>
   </form>
-</div>`);
+</div>`, env);
 }
 
 const LEVEL_META = [
@@ -608,8 +632,8 @@ const LEVEL_META = [
   { title: 'Apply',                section: 'IX–X', hint: 8 },
 ];
 
-function hintBlock(levelIdx) {
-  const text = HINT_EXCERPTS[LEVEL_META[levelIdx].hint];
+function hintBlock(levelIdx, env) {
+  const text = getHints(env)[LEVEL_META[levelIdx].hint];
   return `
 <div class="hint-section">
   <details>
@@ -619,7 +643,7 @@ function hintBlock(levelIdx) {
 </div>`;
 }
 
-function gameLevel(l, params) {
+function gameLevel(l, params, env) {
   const meta = LEVEL_META[l];
   const budget = budgetAfterLevel(l - 1);
   const nextL = l + 1;
@@ -634,7 +658,7 @@ function gameLevel(l, params) {
   <p class="prompt">
     In your own words: <strong>what is the computer future</strong> — and why does the distinction from "AI" matter?
   </p>
-  ${hintBlock(l)}
+  ${hintBlock(l, env)}
   <form action="/play" method="GET">
     <input type="hidden" name="l" value="${nextL}">
     <div class="form-group">
@@ -657,7 +681,7 @@ function gameLevel(l, params) {
     Tell me about a time you <strong>made your own path</strong> when the expected one wasn't available.
     <br><br>Specifics. Not a philosophy of agency — an actual moment.
   </p>
-  ${hintBlock(l)}
+  ${hintBlock(l, env)}
   <form action="/play" method="GET">
     <input type="hidden" name="l" value="${nextL}">
     <div class="form-group">
@@ -678,7 +702,7 @@ function gameLevel(l, params) {
   <p class="prompt">
     Why did you pay $15 to take a test with no guaranteed outcome?
   </p>
-  ${hintBlock(l)}
+  ${hintBlock(l, env)}
   <form action="/play" method="GET">
     <input type="hidden" name="l" value="${nextL}">
     <div class="choices">
@@ -707,7 +731,7 @@ function gameLevel(l, params) {
     Your focus has been declining for weeks. You feel scattered and behind.
     <strong>What do you do?</strong>
   </p>
-  ${hintBlock(l)}
+  ${hintBlock(l, env)}
   <form action="/play" method="GET">
     <input type="hidden" name="l" value="${nextL}">
     <div class="choices">
@@ -735,7 +759,7 @@ function gameLevel(l, params) {
   <p class="prompt">
     Two questions. Answer both honestly.
   </p>
-  ${hintBlock(l)}
+  ${hintBlock(l, env)}
   <form action="/play" method="GET">
     <input type="hidden" name="l" value="${nextL}">
     <div class="form-group">
@@ -762,7 +786,7 @@ function gameLevel(l, params) {
     What are you building?<br><br>
     <strong>Two sentences.</strong> Explain it so a thoughtful stranger who has never heard of you can understand it. No jargon. No backstory.
   </p>
-  ${hintBlock(l)}
+  ${hintBlock(l, env)}
   <form action="/play" method="GET">
     <input type="hidden" name="l" value="${nextL}">
     <div class="form-group">
@@ -786,7 +810,7 @@ function gameLevel(l, params) {
     <br><br>
     <strong>Why?</strong> Conviction without public commitment is just a preference.
   </p>
-  ${hintBlock(l)}
+  ${hintBlock(l, env)}
   <form action="/play" method="GET">
     <input type="hidden" name="l" value="${nextL}">
     <div class="form-group">
@@ -811,7 +835,7 @@ function gameLevel(l, params) {
     Don't script it. Don't perform it. Just speak.
     Upload to Loom, YouTube (unlisted is fine), or anywhere with a public URL.
   </p>
-  ${hintBlock(l)}
+  ${hintBlock(l, env)}
   <form action="/play" method="GET">
     <input type="hidden" name="l" value="${nextL}">
     <div class="form-group">
@@ -835,7 +859,7 @@ function gameLevel(l, params) {
     The person behind this game is real. The call is real.<br>
     You don't apply. You book.
   </p>
-  ${hintBlock(l)}
+  ${hintBlock(l, env)}
 
   <div style="display:flex;flex-direction:column;gap:1.2rem;margin-top:2rem;max-width:480px;">
 
@@ -867,10 +891,10 @@ function gameLevel(l, params) {
 </div>`;
   }
 
-  return shell(meta.title, body, true, l, budget);
+  return shell(meta.title, body, env, true, l, budget);
 }
 
-function completePage() {
+function completePage(env) {
   return shell('you made it', `
 <div class="complete-wrap">
   <div class="complete-mark">∞</div>
@@ -890,11 +914,11 @@ function completePage() {
     <a href="/leaderboard" class="btn">leaderboard →</a>
     <a href="https://computerfuture.me" class="btn btn-outline" target="_blank">computerfuture.me</a>
   </div>
-</div>`);
+</div>`, env);
 }
 
-function leaderboardPage() {
-  // Seeded with one entry. v2: D1 query.
+function leaderboardPage(env) {
+  // Seeded with one entry. Phase 3: D1 query.
   return shell('leaderboard', `
 <div class="lb-wrap">
   <h1>Leaderboard</h1>
@@ -924,7 +948,75 @@ function leaderboardPage() {
     your name appears here after completing level 9.<br>
     <a href="/">enter the game →</a>
   </p>
-</div>`);
+</div>`, env);
+}
+
+// ── Admin dashboard ─────────────────────────────────────────────────────────
+
+async function adminPage(env, token) {
+  if (!env.ADMIN_TOKEN || token !== env.ADMIN_TOKEN) {
+    return new Response('unauthorized', { status: 401, headers: { 'content-type': 'text/plain' } });
+  }
+
+  let s = { sessions: 0, completed: 0 };
+  let p = { paid: 0, total: 0, avg: 0 };
+  let r = { codes: 0, clicks: 0, conversions: 0 };
+  let dbOk = false;
+
+  if (env.DB) {
+    try {
+      const [sessions, payments, referrals] = await Promise.all([
+        env.DB.prepare('SELECT COUNT(*) as n, SUM(CASE WHEN completed_at IS NOT NULL THEN 1 ELSE 0 END) as done FROM sessions').first(),
+        env.DB.prepare("SELECT COUNT(*) as n, COALESCE(SUM(amount_cents),0) as total, COALESCE(AVG(amount_cents),0) as avg FROM payments WHERE status='paid'").first(),
+        env.DB.prepare('SELECT COUNT(*) as n, COALESCE(SUM(click_count),0) as clicks, COALESCE(SUM(conversion_count),0) as conv FROM referrals').first(),
+      ]);
+      s = { sessions: sessions?.n ?? 0, completed: sessions?.done ?? 0 };
+      p = { paid: payments?.n ?? 0, total: ((payments?.total ?? 0) / 100).toFixed(2), avg: ((payments?.avg ?? 0) / 100).toFixed(2) };
+      r = { codes: referrals?.n ?? 0, clicks: referrals?.clicks ?? 0, conversions: referrals?.conv ?? 0 };
+      dbOk = true;
+    } catch (e) {
+      dbOk = false;
+    }
+  }
+
+  const row = (label, value) => `<tr><td style="color:#666;padding:0.5rem 0;border-bottom:1px solid #1a1a1a">${label}</td><td style="text-align:right;padding:0.5rem 0;border-bottom:1px solid #1a1a1a;font-weight:500">${value}</td></tr>`;
+
+  const body = `
+<div style="max-width:520px;margin:0 auto;padding:3rem 1.5rem;font-family:system-ui,sans-serif;background:#080808;min-height:100vh;color:#f0f0f0">
+  <p style="font-family:monospace;font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;color:#666;margin-bottom:1.5rem">computer future — admin</p>
+  <h1 style="font-size:1.8rem;font-weight:700;margin-bottom:0.5rem">command center</h1>
+  <p style="color:#666;font-size:0.85rem;margin-bottom:2.5rem">DB: ${dbOk ? '✓ connected' : env.DB ? '⚠ query error' : '✗ not bound'} &nbsp;·&nbsp; <a href="https://dash.cloudflare.com" target="_blank" style="color:#666">CF analytics ↗</a></p>
+
+  <table style="width:100%;border-collapse:collapse;font-size:0.9rem;margin-bottom:2rem">
+    ${row('sessions started', s.sessions)}
+    ${row('sessions completed', s.completed)}
+    ${row('payments processed', p.paid)}
+    ${row('total revenue', '$' + p.total)}
+    ${row('avg revenue / user', '$' + p.avg)}
+    ${row('referral codes issued', r.codes)}
+    ${row('referral link clicks', r.clicks)}
+    ${row('referral conversions', r.conversions)}
+  </table>
+
+  <p style="font-size:0.75rem;color:#444;margin-top:3rem">refreshes on page load · date filters coming later</p>
+</div>`;
+
+  return new Response(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>admin — computer future</title></head><body style="margin:0;background:#080808">${body}</body></html>`, {
+    status: 200,
+    headers: { 'content-type': 'text/html;charset=UTF-8', 'cache-control': 'no-store' },
+  });
+}
+
+// ── Referral redirect ────────────────────────────────────────────────────────
+
+async function referralRedirect(env, code, url) {
+  if (env.DB && code) {
+    try {
+      await env.DB.prepare('UPDATE referrals SET click_count = click_count + 1 WHERE code = ?').bind(code).run();
+      await env.DB.prepare('INSERT INTO referral_clicks (code, clicked_at) VALUES (?, ?)').bind(code, Date.now()).run();
+    } catch (_) {}
+  }
+  return Response.redirect(`${url.origin}/pay?ref=${encodeURIComponent(code)}`, 302);
 }
 
 // ── Stubs (future API endpoints) ───────────────────────────────────────────
@@ -944,7 +1036,7 @@ function apiStub(name) {
 // ── Router ─────────────────────────────────────────────────────────────────
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, '') || '/';
     const params = url.searchParams;
@@ -961,14 +1053,17 @@ export default {
       if (path === '/api/apply')  return apiStub('/api/apply');
     }
 
-    if (path === '/')            return html(landingPage());
-    if (path === '/pay')         return html(payPage());
-    if (path === '/leaderboard') return html(leaderboardPage());
-    if (path === '/complete')    return html(completePage());
+    if (path === '/admin')       return adminPage(env, params.get('token') || '');
+    if (path.startsWith('/r/'))  return referralRedirect(env, path.slice(3), url);
+
+    if (path === '/')            return html(landingPage(env));
+    if (path === '/pay')         return html(payPage(env));
+    if (path === '/leaderboard') return html(leaderboardPage(env));
+    if (path === '/complete')    return html(completePage(env));
 
     if (path === '/play') {
       const l = parseInt(params.get('l') || '1');
-      if (l >= 1 && l <= LEVELS) return html(gameLevel(l, params));
+      if (l >= 1 && l <= LEVELS) return html(gameLevel(l, params, env));
       return Response.redirect(url.origin + '/play?l=1', 302);
     }
 
@@ -976,6 +1071,6 @@ export default {
 <div class="nf">
   <h1>404</h1>
   <p style="color:var(--gray)"><a href="/">back to the game</a></p>
-</div>`), 404);
+</div>`, env), 404);
   },
 };
