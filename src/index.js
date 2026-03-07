@@ -152,7 +152,7 @@ function page(msg = '', msgClass = '') {
 </head>
 <body>
   <div class="wrap">
-    <p class="name">computer<br>future</p>
+    <p class="name">the infinite<br>game</p>
     <p class="tag">coming soon</p>
     <a class="link" href="https://computerfuture.me">computerfuture.me →</a>
     <form class="form" id="f">
