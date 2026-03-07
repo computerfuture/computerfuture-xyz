@@ -7,6 +7,11 @@ binding = "DB"
 database_name = "computerfuture-xyz"
 database_id = "f618e1f0-aed8-47db-8809-948364b4f003"
 
+[[d1_databases]]
+binding = "WAITLIST"
+database_name = "computerfuture-xyz-waitlist"
+database_id = "cfd43c2f-12c7-4951-bd45-02711d9a839a"
+
 # Secrets — set via: wrangler secret put <NAME>
 # ADMIN_TOKEN    required  password for /admin route
 # BIBLE_CONTENT  optional  10 hint sections pipe-separated
