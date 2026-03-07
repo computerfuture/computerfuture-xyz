@@ -2,15 +2,17 @@ name = "computerfuture-xyz"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 
-# D1 binding removed while under construction — re-add before Phase 2 launch:
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "computerfuture-xyz"
-# database_id = "<id from: wrangler d1 create computerfuture-xyz>"
+[[d1_databases]]
+binding = "DB"
+database_name = "computerfuture-xyz"
+database_id = "f618e1f0-aed8-47db-8809-948364b4f003"
 
-# Secrets for Phase 2 — set via: wrangler secret put <NAME>
+# Secrets — set via: wrangler secret put <NAME>
 # ADMIN_TOKEN    required  password for /admin route
 # BIBLE_CONTENT  optional  10 hint sections pipe-separated
 # CLARITY_ID     optional  Microsoft Clarity project ID
 # STRIPE_SK      required  Stripe secret key (sk_live_...)
 # STRIPE_WH      required  Stripe webhook signing secret
+# ANTHROPIC_API_KEY required  Claude API for game turns
+# INTERNAL_TOKEN required  auth for calling cf-internal
+# JWT_SECRET     required  session JWT signing (matches cf-internal)
