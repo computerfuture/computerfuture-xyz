@@ -165,7 +165,7 @@ function page(msg = '', msgClass = '') {
     <span class="entry"><a class="val" href="https://x.com/elonmusk" target="_blank" rel="noopener">EM</a> &nbsp;6/28/71</span>
     <span class="entry"><a class="val" href="https://mempool.space/tx/0684d5af997f80e6a668dfd7e0e6cecc8deaef4ab6d7e5c8bd9694b6aca8d8e4" target="_blank" rel="noopener">HUMANINVARIANT.COM</a> &nbsp;12/21/25</span>
     <span class="entry"><a class="val" href="https://a-z.md/posts/jn70ebqme1b6pq84dfaz59r9r1829d3v" target="_blank" rel="noopener">A24Z</a> &nbsp;3/6/26</span>
-    <span class="entry"><span class="val">COMPUTER FUTURE</span></span>
+    <span class="entry"><span class="val">COMPUTER FUTURE</span> &nbsp;3/7/26</span>
     <span class="entry">DISPATCHES &nbsp;<span class="val">10</span></span>
   </div>
   <script>
